@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Streaming Chatbot</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #chatbox { width: 100%; height: 300px; border: 1px solid #ccc; padding: 10px; overflow-y: auto; white-space: pre-wrap; }
+    #input { width: 80%; padding: 10px; }
+    #send { padding: 10px 20px; }
+  </style>
+</head>
+<body>
+
+  <h2>Live Streaming Chatbot</h2>
+
+  <div id="chatbox"></div><br>
+
+  <input id="input" type="text" placeholder="Type your message...">
+  <button id="send">Send</button>
+
+<script>
+  async function sendMessage() {
+    const msg = document.getElementById("input").value.trim();
+    if (!msg) return;
+
+    const chatbox = document.getElementById("chatbox");
+    chatbox.innerHTML += `\n\nYou: ${msg}\nBot: `;
+
+    const response = await fetch("http://127.0.0.1:8000/api/chat/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: msg })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      chatbox.innerHTML += chunk;
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    document.getElementById("input").value = "";
+  }
+
+  document.getElementById("send").addEventListener("click", sendMessage);
+</script>
+
+</body>
+</html>
